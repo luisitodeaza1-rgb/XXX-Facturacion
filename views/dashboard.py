@@ -1,8 +1,15 @@
 import tkinter as tk
 
-from Cliente import Clientes
-from Product import Productos
-from facturas import Facturacion
+from views.Cliente import Clientes
+from views.Product import Productos
+from views.facturas import Facturacion
+from views.facturas_historial import HistorialFacturas
+from views.Reportes import Reportes
+from views.Configuracion import Configuracion
+
+from Services.Client_services import obtener_clientes
+from Services.Product_services import obtener_productos
+from Services.Reportes_services import obtener_resumen
 
 
 class Dashboard:
@@ -17,6 +24,10 @@ class Dashboard:
         self.root.minsize(900, 550)
 
         self.crear_interfaz()
+
+    # ==========================================
+    # INTERFAZ
+    # ==========================================
 
     def crear_interfaz(self):
 
@@ -41,7 +52,9 @@ class Dashboard:
             bg="#1f2937"
         )
 
-        titulo.pack(pady=30)
+        titulo.pack(
+            pady=30
+        )
 
         botones = [
             ("Inicio", self.inicio),
@@ -90,6 +103,10 @@ class Dashboard:
 
         self.mostrar_inicio()
 
+    # ==========================================
+    # INICIO
+    # ==========================================
+
     def mostrar_inicio(self):
 
         self.limpiar_contenido()
@@ -121,6 +138,36 @@ class Dashboard:
             padx=30
         )
 
+        # ==========================================
+        # OBTENER ESTADÍSTICAS
+        # ==========================================
+
+        try:
+
+            resumen = obtener_resumen()
+
+            total_clientes = resumen["clientes"]
+            total_productos = resumen["productos"]
+            total_facturas = resumen["facturas"]
+            total_ventas = resumen["ventas"]
+
+        except Exception:
+
+            total_clientes = len(
+                obtener_clientes()
+            )
+
+            total_productos = len(
+                obtener_productos()
+            )
+
+            total_facturas = 0
+            total_ventas = 0
+
+        # ==========================================
+        # TARJETAS
+        # ==========================================
+
         tarjetas = tk.Frame(
             self.contenido,
             bg="#f3f4f6"
@@ -135,30 +182,78 @@ class Dashboard:
         self.crear_tarjeta(
             tarjetas,
             "Clientes",
-            "0",
+            str(total_clientes),
             0
         )
 
         self.crear_tarjeta(
             tarjetas,
             "Productos",
-            "0",
+            str(total_productos),
             1
         )
 
         self.crear_tarjeta(
             tarjetas,
             "Facturas",
-            "0",
+            str(total_facturas),
             2
         )
 
         self.crear_tarjeta(
             tarjetas,
             "Ventas",
-            "RD$ 0.00",
+            f"RD$ {total_ventas:,.2f}",
             3
         )
+
+        # ==========================================
+        # INFORMACIÓN
+        # ==========================================
+
+        informacion = tk.Frame(
+            self.contenido,
+            bg="white",
+            relief="solid",
+            borderwidth=1
+        )
+
+        informacion.pack(
+            fill="x",
+            padx=30,
+            pady=10
+        )
+
+        tk.Label(
+            informacion,
+            text="XXX Facturador",
+            font=("Arial", 16, "bold"),
+            bg="white",
+            fg="#111827"
+        ).pack(
+            anchor="w",
+            padx=20,
+            pady=(20, 5)
+        )
+
+        tk.Label(
+            informacion,
+            text=(
+                "Sistema de gestión para clientes, productos, "
+                "inventario y facturación."
+            ),
+            font=("Arial", 10),
+            bg="white",
+            fg="#6b7280"
+        ).pack(
+            anchor="w",
+            padx=20,
+            pady=(0, 20)
+        )
+
+    # ==========================================
+    # TARJETAS
+    # ==========================================
 
     def crear_tarjeta(
         self,
@@ -204,14 +299,27 @@ class Dashboard:
             fg="#111827"
         ).pack()
 
+    # ==========================================
+    # LIMPIAR
+    # ==========================================
+
     def limpiar_contenido(self):
 
         for widget in self.contenido.winfo_children():
+
             widget.destroy()
+
+    # ==========================================
+    # INICIO
+    # ==========================================
 
     def inicio(self):
 
         self.mostrar_inicio()
+
+    # ==========================================
+    # CLIENTES
+    # ==========================================
 
     def clientes(self):
 
@@ -221,6 +329,10 @@ class Dashboard:
             self.contenido
         )
 
+    # ==========================================
+    # PRODUCTOS
+    # ==========================================
+
     def productos(self):
 
         self.limpiar_contenido()
@@ -228,6 +340,10 @@ class Dashboard:
         Productos(
             self.contenido
         )
+
+    # ==========================================
+    # FACTURACIÓN
+    # ==========================================
 
     def facturacion(self):
 
@@ -237,38 +353,38 @@ class Dashboard:
             self.contenido
         )
 
+    # ==========================================
+    # HISTORIAL
+    # ==========================================
+
     def historial(self):
-
-        self.mostrar_modulo(
-            "Historial de Facturas"
-        )
-
-    def reportes(self):
-
-        self.mostrar_modulo(
-            "Reportes"
-        )
-
-    def configuracion(self):
-
-        self.mostrar_modulo(
-            "Configuración"
-        )
-
-    def mostrar_modulo(self, titulo):
 
         self.limpiar_contenido()
 
-        etiqueta = tk.Label(
-            self.contenido,
-            text=titulo,
-            font=("Arial", 26, "bold"),
-            bg="#f3f4f6",
-            fg="#111827"
+        HistorialFacturas(
+            self.contenido
         )
 
-        etiqueta.pack(
-            anchor="w",
-            padx=30,
-            pady=30
+    # ==========================================
+    # REPORTES
+    # ==========================================
+
+    def reportes(self):
+
+        self.limpiar_contenido()
+
+        Reportes(
+            self.contenido
+        )
+
+    # ==========================================
+    # CONFIGURACIÓN
+    # ==========================================
+
+    def configuracion(self):
+
+        self.limpiar_contenido()
+
+        Configuracion(
+            self.contenido
         )

@@ -1,8 +1,0 @@
-NOMBRE_APP = "Sistema de Facturación"
-
-VERSION = "0.0.1"
-
-ITBIS = 0.18
-
-ANCHO_VENTANA = 1200
-ALTO_VENTANA = 700
