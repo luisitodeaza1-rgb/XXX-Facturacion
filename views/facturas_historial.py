@@ -5,7 +5,9 @@ from Services.Facturas_historial_services import (
     obtener_facturas,
     obtener_factura,
     obtener_detalle_factura,
-    buscar_facturas
+    buscar_facturas,
+    obtener_totales_facturas,
+    eliminar_factura
 )
 
 
@@ -40,7 +42,7 @@ class HistorialFacturas:
 
         subtitulo = tk.Label(
             self.padre,
-            text="Consulta y revisión de facturas realizadas",
+            text="Consulta, revisión y gestión de facturas realizadas",
             font=("Arial", 11),
             bg="#f3f4f6",
             fg="#6b7280"
@@ -49,6 +51,72 @@ class HistorialFacturas:
         subtitulo.pack(
             anchor="w",
             padx=30
+        )
+
+        # ==========================================
+        # RESUMEN
+        # ==========================================
+
+        resumen = tk.Frame(
+            self.padre,
+            bg="#f3f4f6"
+        )
+
+        resumen.pack(
+            fill="x",
+            padx=30,
+            pady=(20, 5)
+        )
+
+        self.label_cantidad = tk.Label(
+            resumen,
+            text="Facturas: 0",
+            font=("Arial", 11, "bold"),
+            bg="#f3f4f6",
+            fg="#374151"
+        )
+
+        self.label_cantidad.pack(
+            side="left",
+            padx=(0, 30)
+        )
+
+        self.label_subtotal = tk.Label(
+            resumen,
+            text="Subtotal: RD$ 0.00",
+            font=("Arial", 11),
+            bg="#f3f4f6",
+            fg="#374151"
+        )
+
+        self.label_subtotal.pack(
+            side="left",
+            padx=(0, 30)
+        )
+
+        self.label_itbis = tk.Label(
+            resumen,
+            text="ITBIS: RD$ 0.00",
+            font=("Arial", 11),
+            bg="#f3f4f6",
+            fg="#374151"
+        )
+
+        self.label_itbis.pack(
+            side="left",
+            padx=(0, 30)
+        )
+
+        self.label_total = tk.Label(
+            resumen,
+            text="Total facturado: RD$ 0.00",
+            font=("Arial", 11, "bold"),
+            bg="#f3f4f6",
+            fg="#111827"
+        )
+
+        self.label_total.pack(
+            side="left"
         )
 
         # ==========================================
@@ -63,7 +131,7 @@ class HistorialFacturas:
         herramientas.pack(
             fill="x",
             padx=30,
-            pady=20
+            pady=15
         )
 
         self.busqueda = tk.Entry(
@@ -156,7 +224,7 @@ class HistorialFacturas:
 
         self.tabla.column(
             "cliente",
-            width=180
+            width=220
         )
 
         self.tabla.column(
@@ -209,7 +277,7 @@ class HistorialFacturas:
         )
 
         # ==========================================
-        # BOTÓN
+        # BOTONES
         # ==========================================
 
         botones = tk.Frame(
@@ -235,6 +303,24 @@ class HistorialFacturas:
             side="left"
         )
 
+        boton_eliminar = tk.Button(
+            botones,
+            text="Eliminar factura",
+            command=self.eliminar_factura_seleccionada,
+            width=18,
+            bg="#dc2626",
+            fg="white",
+            activebackground="#b91c1c",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2"
+        )
+
+        boton_eliminar.pack(
+            side="left",
+            padx=10
+        )
+
         self.tabla.bind(
             "<Double-1>",
             lambda evento: self.ver_factura()
@@ -255,6 +341,8 @@ class HistorialFacturas:
         self.insertar_facturas(
             facturas
         )
+
+        self.actualizar_totales()
 
     # ==========================================
     # INSERTAR EN TABLA
@@ -278,6 +366,32 @@ class HistorialFacturas:
                     f"RD$ {factura[7]:,.2f}"
                 )
             )
+
+    # ==========================================
+    # ACTUALIZAR TOTALES
+    # ==========================================
+
+    def actualizar_totales(self):
+
+        cantidad, subtotal, itbis, total = (
+            obtener_totales_facturas()
+        )
+
+        self.label_cantidad.config(
+            text=f"Facturas: {cantidad}"
+        )
+
+        self.label_subtotal.config(
+            text=f"Subtotal: RD$ {subtotal:,.2f}"
+        )
+
+        self.label_itbis.config(
+            text=f"ITBIS: RD$ {itbis:,.2f}"
+        )
+
+        self.label_total.config(
+            text=f"Total facturado: RD$ {total:,.2f}"
+        )
 
     # ==========================================
     # BÚSQUEDA
@@ -314,6 +428,11 @@ class HistorialFacturas:
             facturas
         )
 
+        # Los totales siguen mostrando
+        # el total general del sistema.
+
+        self.actualizar_totales()
+
     # ==========================================
     # VER FACTURA
     # ==========================================
@@ -342,6 +461,17 @@ class HistorialFacturas:
             factura_id
         )
 
+        if not factura:
+
+            messagebox.showerror(
+                "Factura no encontrada",
+                "La factura seleccionada ya no existe."
+            )
+
+            self.cargar_facturas()
+
+            return
+
         detalle = obtener_detalle_factura(
             factura_id
         )
@@ -350,6 +480,76 @@ class HistorialFacturas:
             factura,
             detalle
         )
+
+    # ==========================================
+    # ELIMINAR FACTURA
+    # ==========================================
+
+    def eliminar_factura_seleccionada(self):
+
+        seleccion = self.tabla.selection()
+
+        if not seleccion:
+
+            messagebox.showwarning(
+                "Seleccionar factura",
+                "Seleccione una factura para eliminar."
+            )
+
+            return
+
+        datos = self.tabla.item(
+            seleccion[0],
+            "values"
+        )
+
+        factura_id = datos[0]
+        numero_factura = datos[1]
+        cliente = datos[2]
+        total = datos[7]
+
+        confirmar = messagebox.askyesno(
+            "Eliminar factura",
+            (
+                f"¿Está seguro de eliminar la factura "
+                f"{numero_factura}?\n\n"
+                f"Cliente: {cliente}\n"
+                f"Total: {total}\n\n"
+                "Esta acción eliminará la factura y su detalle "
+                "y devolverá los productos al inventario."
+            )
+        )
+
+        if not confirmar:
+
+            return
+
+        try:
+
+            numero_eliminado = eliminar_factura(
+                factura_id
+            )
+
+            messagebox.showinfo(
+                "Factura eliminada",
+                (
+                    f"La factura {numero_eliminado} "
+                    "fue eliminada correctamente.\n\n"
+                    "El stock de los productos fue restaurado."
+                )
+            )
+
+            self.cargar_facturas()
+
+        except Exception as error:
+
+            messagebox.showerror(
+                "Error",
+                (
+                    "No fue posible eliminar la factura.\n\n"
+                    f"{error}"
+                )
+            )
 
     # ==========================================
     # VENTANA DETALLE
@@ -404,8 +604,14 @@ class HistorialFacturas:
             ventana,
             text=f"Cliente: {factura[2] or 'Sin cliente'}",
             font=("Arial", 10)
+        ).pack()
+
+        tk.Label(
+            ventana,
+            text=f"RNC: {factura[3] or 'Sin RNC'}",
+            font=("Arial", 10)
         ).pack(
-            pady=(5, 20)
+            pady=(3, 20)
         )
 
         # ==========================================

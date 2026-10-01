@@ -10,8 +10,8 @@ def obtener_facturas():
         SELECT
             f.id,
             f.numero,
-            c.nombre,
-            c.rnc,
+            COALESCE(f.cliente_nombre, c.nombre, ''),
+            COALESCE(f.cliente_rnc, c.rnc, ''),
             f.fecha,
             f.subtotal,
             f.itbis,
@@ -38,8 +38,8 @@ def obtener_factura(factura_id):
         SELECT
             f.id,
             f.numero,
-            c.nombre,
-            c.rnc,
+            COALESCE(f.cliente_nombre, c.nombre, ''),
+            COALESCE(f.cliente_rnc, c.rnc, ''),
             f.fecha,
             f.subtotal,
             f.itbis,
@@ -94,8 +94,8 @@ def buscar_facturas(texto):
         SELECT
             f.id,
             f.numero,
-            c.nombre,
-            c.rnc,
+            COALESCE(f.cliente_nombre, c.nombre, ''),
+            COALESCE(f.cliente_rnc, c.rnc, ''),
             f.fecha,
             f.subtotal,
             f.itbis,
@@ -105,8 +105,8 @@ def buscar_facturas(texto):
             ON f.cliente_id = c.id
         WHERE
             f.numero LIKE ?
-            OR c.nombre LIKE ?
-            OR c.rnc LIKE ?
+            OR COALESCE(f.cliente_nombre, c.nombre, '') LIKE ?
+            OR COALESCE(f.cliente_rnc, c.rnc, '') LIKE ?
         ORDER BY f.id DESC
     """, (
         texto_busqueda,
@@ -119,3 +119,118 @@ def buscar_facturas(texto):
     conexion.close()
 
     return facturas
+
+
+def obtener_totales_facturas():
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT
+            COUNT(*),
+            COALESCE(SUM(subtotal), 0),
+            COALESCE(SUM(itbis), 0),
+            COALESCE(SUM(total), 0)
+        FROM facturas
+    """)
+
+    totales = cursor.fetchone()
+
+    conexion.close()
+
+    return totales
+
+
+def eliminar_factura(factura_id):
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    try:
+
+        # ==========================================
+        # VERIFICAR QUE LA FACTURA EXISTA
+        # ==========================================
+
+        cursor.execute("""
+            SELECT id, numero
+            FROM facturas
+            WHERE id = ?
+        """, (factura_id,))
+
+        factura = cursor.fetchone()
+
+        if not factura:
+
+            raise ValueError(
+                "La factura seleccionada no existe."
+            )
+
+        # ==========================================
+        # OBTENER PRODUCTOS Y CANTIDADES
+        # PARA DEVOLVER EL STOCK
+        # ==========================================
+
+        cursor.execute("""
+            SELECT
+                producto_id,
+                cantidad
+            FROM detalle_factura
+            WHERE factura_id = ?
+        """, (factura_id,))
+
+        detalles = cursor.fetchall()
+
+        # ==========================================
+        # RESTAURAR STOCK
+        # ==========================================
+
+        for producto_id, cantidad in detalles:
+
+            cursor.execute("""
+                UPDATE productos
+                SET stock = stock + ?
+                WHERE id = ?
+            """, (
+                cantidad,
+                producto_id
+            ))
+
+        # ==========================================
+        # ELIMINAR DETALLE
+        # ==========================================
+
+        cursor.execute("""
+            DELETE FROM detalle_factura
+            WHERE factura_id = ?
+        """, (factura_id,))
+
+        # ==========================================
+        # ELIMINAR FACTURA
+        # ==========================================
+
+        cursor.execute("""
+            DELETE FROM facturas
+            WHERE id = ?
+        """, (factura_id,))
+
+        if cursor.rowcount == 0:
+
+            raise ValueError(
+                "No fue posible eliminar la factura."
+            )
+
+        conexion.commit()
+
+        return factura[1]
+
+    except Exception:
+
+        conexion.rollback()
+
+        raise
+
+    finally:
+
+        conexion.close()
