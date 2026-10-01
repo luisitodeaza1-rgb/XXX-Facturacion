@@ -1,5 +1,7 @@
 import tkinter as tk
 
+from Cliente import Clientes
+
 
 class Dashboard:
 
@@ -37,7 +39,9 @@ class Dashboard:
 
         self.sidebar.pack_propagate(False)
 
-        # Nombre del sistema
+        # ------------------------------
+        # NOMBRE DEL SISTEMA
+        # ------------------------------
 
         titulo = tk.Label(
             self.sidebar,
@@ -237,7 +241,6 @@ class Dashboard:
     def limpiar_contenido(self):
 
         for widget in self.contenido.winfo_children():
-
             widget.destroy()
 
     # ==========================================
@@ -250,7 +253,9 @@ class Dashboard:
 
     def clientes(self):
 
-        self.mostrar_modulo("Clientes")
+        self.limpiar_contenido()
+
+        Clientes(self.contenido)
 
     def productos(self):
 
