@@ -75,6 +75,8 @@ def inicializar_base_de_datos():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numero TEXT UNIQUE,
             cliente_id INTEGER,
+            cliente_nombre TEXT,
+            cliente_rnc TEXT,
             fecha TEXT NOT NULL,
             subtotal REAL NOT NULL,
             itbis REAL NOT NULL,
@@ -83,6 +85,33 @@ def inicializar_base_de_datos():
                 REFERENCES clientes(id)
         )
     """)
+
+    # ==========================================
+    # MIGRACIÓN DE FACTURAS EXISTENTES
+    # ==========================================
+
+    cursor.execute("""
+        PRAGMA table_info(facturas)
+    """)
+
+    columnas_facturas = {
+        columna[1]
+        for columna in cursor.fetchall()
+    }
+
+    if "cliente_nombre" not in columnas_facturas:
+
+        cursor.execute("""
+            ALTER TABLE facturas
+            ADD COLUMN cliente_nombre TEXT
+        """)
+
+    if "cliente_rnc" not in columnas_facturas:
+
+        cursor.execute("""
+            ALTER TABLE facturas
+            ADD COLUMN cliente_rnc TEXT
+        """)
 
     # ==========================================
     # DETALLE DE FACTURA

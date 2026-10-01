@@ -9,8 +9,7 @@ from Services.Facturas_services import (
 )
 
 from Services.Client_services import (
-    obtener_cliente_por_rnc,
-    crear_cliente
+    obtener_cliente_por_rnc
 )
 
 from Services.RNC_services import consultar_rnc
@@ -25,6 +24,26 @@ class Facturacion:
         self.productos = []
         self.items = []
         self.clientes = []
+
+        # Cliente actualmente seleccionado.
+        #
+        # Ejemplo cliente registrado:
+        # {
+        #     "tipo": "registrado",
+        #     "id": 1,
+        #     "nombre": "...",
+        #     "rnc": "..."
+        # }
+        #
+        # Ejemplo particular:
+        # {
+        #     "tipo": "particular",
+        #     "id": None,
+        #     "nombre": "...",
+        #     "rnc": "..."
+        # }
+
+        self.cliente_actual = None
 
         self.crear_interfaz()
         self.cargar_clientes()
@@ -112,8 +131,8 @@ class Facturacion:
 
         boton_consultar = tk.Button(
             cliente_frame,
-            text="CONSULTAR DGII",
-            command=self.consultar_dgii,
+            text="CONSULTAR DGAPI",
+            command=self.consultar_dgapi,
             bg="#2563eb",
             fg="white",
             activebackground="#1d4ed8",
@@ -458,10 +477,10 @@ class Facturacion:
         )
 
     # ==========================================
-    # CONSULTAR DGII
+    # CONSULTAR DGAPI
     # ==========================================
 
-    def consultar_dgii(self):
+    def consultar_dgapi(self):
 
         rnc = (
             self.rnc_var
@@ -489,7 +508,7 @@ class Facturacion:
             self.padre.update()
 
             # ==========================================
-            # PRIMERO BUSCAMOS EN NUESTRA BASE DE DATOS
+            # PRIMERO BUSCAMOS EN CLIENTES REGISTRADOS
             # ==========================================
 
             cliente = obtener_cliente_por_rnc(rnc)
@@ -501,26 +520,44 @@ class Facturacion:
                 )
 
                 messagebox.showinfo(
-                    "Cliente encontrado",
-                    f"El cliente '{cliente[1]}' ya está registrado."
+                    "Cliente registrado",
+                    (
+                        f"El cliente '{cliente[1]}' "
+                        "ya está registrado en el sistema."
+                    )
                 )
 
                 return
 
             # ==========================================
-            # SI NO EXISTE, CONSULTAMOS DGII
+            # SI NO EXISTE, CONSULTAMOS DGAPI
             # ==========================================
 
             resultado = consultar_rnc(rnc)
 
             if not resultado:
 
+                self.cliente_actual = None
+
+                self.cliente_combo.set("")
+
+                self.cliente_info.config(
+                    text="Cliente: RNC no encontrado"
+                )
+
                 messagebox.showwarning(
                     "RNC no encontrado",
-                    "No se encontraron datos para el RNC indicado."
+                    (
+                        "DGAPI no encontró información "
+                        "para el RNC indicado."
+                    )
                 )
 
                 return
+
+            # ==========================================
+            # OBTENER NOMBRE
+            # ==========================================
 
             nombre = (
                 resultado.get("nombre_empresa")
@@ -529,47 +566,36 @@ class Facturacion:
 
             if not nombre:
 
+                self.cliente_actual = None
+
                 messagebox.showwarning(
                     "Datos incompletos",
-                    "La DGII no devolvió el nombre del contribuyente."
+                    (
+                        "DGAPI no devolvió el nombre "
+                        "del contribuyente."
+                    )
                 )
 
                 return
 
             # ==========================================
-            # CREAR CLIENTE AUTOMÁTICAMENTE
+            # PARTICULAR
+            #
+            # NO SE CREA EN clientes
             # ==========================================
 
-            cliente_id = crear_cliente(
-                nombre,
-                rnc,
-                "",
-                "",
-                ""
-            )
+            self.cliente_actual = {
+                "tipo": "particular",
+                "id": None,
+                "nombre": nombre,
+                "rnc": rnc
+            }
 
-            cliente = (
-                cliente_id,
-                nombre,
-                rnc,
-                "",
-                "",
-                ""
-            )
-
-            self.clientes.insert(
-                0,
-                cliente
-            )
-
-            self.actualizar_lista_clientes()
-
-            self.seleccionar_cliente(
-                cliente
-            )
+            # Quitamos cualquier selección anterior
+            self.cliente_combo.set("")
 
             # ==========================================
-            # MOSTRAR INFORMACIÓN OBTENIDA
+            # MOSTRAR INFORMACIÓN
             # ==========================================
 
             actividad = resultado.get(
@@ -587,31 +613,42 @@ class Facturacion:
                 ""
             )
 
+            self.cliente_info.config(
+                text=(
+                    f"Particular: {nombre} | "
+                    f"RNC: {rnc}"
+                )
+            )
+
             mensaje = (
-                f"Cliente: {nombre}\n"
+                f"Nombre: {nombre}\n"
                 f"RNC: {rnc}"
             )
 
             if actividad:
+
                 mensaje += (
                     f"\nActividad económica: {actividad}"
                 )
 
             if estado:
+
                 mensaje += (
                     f"\nEstado: {estado}"
                 )
 
             if regimen:
+
                 mensaje += (
                     f"\nRégimen: {regimen}"
                 )
 
             messagebox.showinfo(
-                "Cliente agregado",
+                "Particular encontrado",
                 (
-                    "El cliente fue consultado en la DGII "
-                    "y agregado automáticamente.\n\n"
+                    "El contribuyente fue encontrado "
+                    "mediante DGAPI.\n\n"
+                    "No fue agregado a la tabla de clientes.\n\n"
                     + mensaje
                 )
             )
@@ -627,7 +664,10 @@ class Facturacion:
 
             messagebox.showerror(
                 "Error",
-                f"No fue posible consultar el RNC.\n\n{error}"
+                (
+                    "No fue posible consultar el RNC.\n\n"
+                    f"{error}"
+                )
             )
 
         finally:
@@ -637,7 +677,7 @@ class Facturacion:
             )
 
     # ==========================================
-    # SELECCIONAR CLIENTE
+    # SELECCIONAR CLIENTE REGISTRADO
     # ==========================================
 
     def seleccionar_cliente(self, cliente):
@@ -658,6 +698,13 @@ class Facturacion:
                     f"{cliente[2] or 'Sin RNC'}"
                 )
 
+                self.cliente_actual = {
+                    "tipo": "registrado",
+                    "id": cliente[0],
+                    "nombre": cliente[1],
+                    "rnc": cliente[2] or ""
+                }
+
                 self.cliente_info.config(
                     text=(
                         f"Cliente seleccionado: "
@@ -673,9 +720,17 @@ class Facturacion:
         indice = self.cliente_combo.current()
 
         if indice == -1:
+
             return
 
         cliente = self.clientes[indice]
+
+        self.cliente_actual = {
+            "tipo": "registrado",
+            "id": cliente[0],
+            "nombre": cliente[1],
+            "rnc": cliente[2] or ""
+        }
 
         self.cliente_info.config(
             text=(
@@ -788,7 +843,10 @@ class Facturacion:
 
             messagebox.showwarning(
                 "Cantidad",
-                "La cantidad debe ser un número entero mayor que 0."
+                (
+                    "La cantidad debe ser un número "
+                    "entero mayor que 0."
+                )
             )
 
             return
@@ -821,7 +879,10 @@ class Facturacion:
 
                     messagebox.showwarning(
                         "Stock insuficiente",
-                        f"No puede agregar más de {stock} unidades."
+                        (
+                            f"No puede agregar más "
+                            f"de {stock} unidades."
+                        )
                     )
 
                     return
@@ -933,13 +994,14 @@ class Facturacion:
 
     def guardar_factura(self):
 
-        cliente_index = self.cliente_combo.current()
-
-        if cliente_index == -1:
+        if self.cliente_actual is None:
 
             messagebox.showwarning(
                 "Cliente",
-                "Seleccione un cliente."
+                (
+                    "Seleccione un cliente registrado "
+                    "o consulte un RNC mediante DGAPI."
+                )
             )
 
             return
@@ -953,26 +1015,32 @@ class Facturacion:
 
             return
 
-        cliente = self.clientes[
-            cliente_index
-        ]
-
-        cliente_id = cliente[0]
+        cliente_id = self.cliente_actual["id"]
+        cliente_nombre = self.cliente_actual["nombre"]
+        cliente_rnc = self.cliente_actual["rnc"]
 
         try:
 
             resultado = crear_factura(
                 cliente_id,
-                self.items
+                self.items,
+                cliente_nombre,
+                cliente_rnc
             )
 
             messagebox.showinfo(
                 "Factura creada",
                 (
-                    f"Factura {resultado['numero']} creada correctamente.\n\n"
-                    f"Subtotal: RD$ {resultado['subtotal']:,.2f}\n"
-                    f"ITBIS: RD$ {resultado['itbis']:,.2f}\n"
-                    f"Total: RD$ {resultado['total']:,.2f}"
+                    f"Factura {resultado['numero']} "
+                    "creada correctamente.\n\n"
+                    f"Cliente: {cliente_nombre}\n"
+                    f"RNC: {cliente_rnc or 'Sin RNC'}\n\n"
+                    f"Subtotal: RD$ "
+                    f"{resultado['subtotal']:,.2f}\n"
+                    f"ITBIS: RD$ "
+                    f"{resultado['itbis']:,.2f}\n"
+                    f"Total: RD$ "
+                    f"{resultado['total']:,.2f}"
                 )
             )
 
@@ -986,5 +1054,8 @@ class Facturacion:
 
             messagebox.showerror(
                 "Error",
-                f"No se pudo crear la factura.\n\n{error}"
+                (
+                    "No se pudo crear la factura.\n\n"
+                    f"{error}"
+                )
             )

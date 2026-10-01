@@ -9,6 +9,8 @@ from Services.Client_services import (
     buscar_clientes
 )
 
+from Services.RNC_services import consultar_rnc
+
 
 class Clientes:
 
@@ -20,7 +22,7 @@ class Clientes:
         self.cargar_clientes()
 
     # ==========================================
-    # INTERFAZ
+    # INTERFAZ PRINCIPAL
     # ==========================================
 
     def crear_interfaz(self):
@@ -141,12 +143,35 @@ class Clientes:
             show="headings"
         )
 
-        self.tabla.heading("id", text="ID")
-        self.tabla.heading("nombre", text="Nombre")
-        self.tabla.heading("rnc", text="RNC")
-        self.tabla.heading("telefono", text="Teléfono")
-        self.tabla.heading("email", text="Email")
-        self.tabla.heading("direccion", text="Dirección")
+        self.tabla.heading(
+            "id",
+            text="ID"
+        )
+
+        self.tabla.heading(
+            "nombre",
+            text="Nombre"
+        )
+
+        self.tabla.heading(
+            "rnc",
+            text="RNC"
+        )
+
+        self.tabla.heading(
+            "telefono",
+            text="Teléfono"
+        )
+
+        self.tabla.heading(
+            "email",
+            text="Email"
+        )
+
+        self.tabla.heading(
+            "direccion",
+            text="Dirección"
+        )
 
         self.tabla.column(
             "id",
@@ -346,7 +371,7 @@ class Clientes:
             else "Nuevo cliente"
         )
 
-        ventana.geometry("450x500")
+        ventana.geometry("500x650")
 
         ventana.resizable(
             False,
@@ -359,6 +384,10 @@ class Clientes:
 
         ventana.grab_set()
 
+        # ==========================================
+        # TÍTULO
+        # ==========================================
+
         tk.Label(
             ventana,
             text=(
@@ -367,7 +396,9 @@ class Clientes:
                 else "Nuevo cliente"
             ),
             font=("Arial", 20, "bold")
-        ).pack(pady=20)
+        ).pack(
+            pady=20
+        )
 
         formulario = tk.Frame(
             ventana
@@ -378,38 +409,343 @@ class Clientes:
             fill="x"
         )
 
-        campos = [
-            ("Nombre *", "nombre"),
-            ("RNC", "rnc"),
-            ("Teléfono", "telefono"),
-            ("Email", "email"),
-            ("Dirección", "direccion")
-        ]
-
         entradas = {}
 
-        for texto, clave in campos:
+        # ==========================================
+        # NOMBRE
+        # ==========================================
+
+        tk.Label(
+            formulario,
+            text="Nombre *",
+            font=("Arial", 10)
+        ).pack(
+            anchor="w",
+            pady=(8, 3)
+        )
+
+        entradas["nombre"] = tk.Entry(
+            formulario,
+            font=("Arial", 10)
+        )
+
+        entradas["nombre"].pack(
+            fill="x",
+            ipady=5
+        )
+
+        # ==========================================
+        # RNC
+        # ==========================================
+
+        tk.Label(
+            formulario,
+            text="RNC",
+            font=("Arial", 10)
+        ).pack(
+            anchor="w",
+            pady=(8, 3)
+        )
+
+        fila_rnc = tk.Frame(
+            formulario
+        )
+
+        fila_rnc.pack(
+            fill="x"
+        )
+
+        entradas["rnc"] = tk.Entry(
+            fila_rnc,
+            font=("Arial", 10)
+        )
+
+        entradas["rnc"].pack(
+            side="left",
+            fill="x",
+            expand=True,
+            ipady=5
+        )
+
+        # ==========================================
+        # TELÉFONO
+        # ==========================================
+
+        tk.Label(
+            formulario,
+            text="Teléfono",
+            font=("Arial", 10)
+        ).pack(
+            anchor="w",
+            pady=(8, 3)
+        )
+
+        entradas["telefono"] = tk.Entry(
+            formulario,
+            font=("Arial", 10)
+        )
+
+        entradas["telefono"].pack(
+            fill="x",
+            ipady=5
+        )
+
+        # ==========================================
+        # EMAIL
+        # ==========================================
+
+        tk.Label(
+            formulario,
+            text="Email",
+            font=("Arial", 10)
+        ).pack(
+            anchor="w",
+            pady=(8, 3)
+        )
+
+        entradas["email"] = tk.Entry(
+            formulario,
+            font=("Arial", 10)
+        )
+
+        entradas["email"].pack(
+            fill="x",
+            ipady=5
+        )
+
+        # ==========================================
+        # DIRECCIÓN
+        # ==========================================
+
+        tk.Label(
+            formulario,
+            text="Dirección",
+            font=("Arial", 10)
+        ).pack(
+            anchor="w",
+            pady=(8, 3)
+        )
+
+        entradas["direccion"] = tk.Entry(
+            formulario,
+            font=("Arial", 10)
+        )
+
+        entradas["direccion"].pack(
+            fill="x",
+            ipady=5
+        )
+
+        # ==========================================
+        # INFORMACIÓN DGAPI
+        # ==========================================
+
+        informacion_dgapi = tk.LabelFrame(
+            formulario,
+            text="Información DGAPI",
+            font=("Arial", 9, "bold"),
+            padx=10,
+            pady=5
+        )
+
+        informacion_dgapi.pack(
+            fill="x",
+            pady=(15, 5)
+        )
+
+        etiquetas_dgapi = {}
+
+        campos_dgapi = [
+            ("Nombre comercial", "nombre_comercial"),
+            ("Actividad económica", "actividad_economica"),
+            ("Fecha de inicio", "fecha_inicio"),
+            ("Estado", "estado"),
+            ("Régimen de pago", "regimen")
+        ]
+
+        for texto, clave in campos_dgapi:
+
+            fila = tk.Frame(
+                informacion_dgapi
+            )
+
+            fila.pack(
+                fill="x",
+                pady=2
+            )
 
             tk.Label(
-                formulario,
-                text=texto,
-                font=("Arial", 10)
-            ).pack(
+                fila,
+                text=f"{texto}:",
+                width=22,
                 anchor="w",
-                pady=(8, 3)
+                font=("Arial", 9)
+            ).pack(
+                side="left"
             )
 
-            entrada = tk.Entry(
-                formulario,
-                font=("Arial", 10)
+            etiqueta = tk.Label(
+                fila,
+                text="",
+                anchor="w",
+                font=("Arial", 9)
             )
 
-            entrada.pack(
+            etiqueta.pack(
+                side="left",
                 fill="x",
-                ipady=5
+                expand=True
             )
 
-            entradas[clave] = entrada
+            etiquetas_dgapi[clave] = etiqueta
+
+        # ==========================================
+        # CONSULTAR DGAPI
+        # ==========================================
+
+        def consultar_dgapi():
+
+            rnc = entradas["rnc"].get().strip()
+
+            if not rnc:
+
+                messagebox.showwarning(
+                    "RNC requerido",
+                    "Introduzca un RNC para realizar la consulta.",
+                    parent=ventana
+                )
+
+                return
+
+            try:
+
+                boton_dgapi.config(
+                    state="disabled",
+                    text="Consultando..."
+                )
+
+                ventana.update_idletasks()
+
+                datos = consultar_rnc(rnc)
+
+                if datos is None:
+
+                    messagebox.showinfo(
+                        "RNC no encontrado",
+                        f"No se encontró información para el RNC {rnc}.",
+                        parent=ventana
+                    )
+
+                    return
+
+                # ======================================
+                # RNC NORMALIZADO
+                # ======================================
+
+                entradas["rnc"].delete(
+                    0,
+                    tk.END
+                )
+
+                entradas["rnc"].insert(
+                    0,
+                    datos.get("rnc", rnc)
+                )
+
+                # ======================================
+                # NOMBRE
+                # ======================================
+
+                nombre = datos.get(
+                    "nombre_empresa",
+                    ""
+                )
+
+                if nombre:
+
+                    entradas["nombre"].delete(
+                        0,
+                        tk.END
+                    )
+
+                    entradas["nombre"].insert(
+                        0,
+                        nombre
+                    )
+
+                # ======================================
+                # INFORMACIÓN ADICIONAL
+                # ======================================
+
+                for clave, etiqueta in etiquetas_dgapi.items():
+
+                    valor = datos.get(
+                        clave,
+                        ""
+                    )
+
+                    etiqueta.config(
+                        text=valor or "No disponible"
+                    )
+
+                messagebox.showinfo(
+                    "Consulta completada",
+                    "La información del RNC fue obtenida correctamente desde DGAPI.",
+                    parent=ventana
+                )
+
+            except ValueError as error:
+
+                messagebox.showwarning(
+                    "RNC inválido",
+                    str(error),
+                    parent=ventana
+                )
+
+            except RuntimeError as error:
+
+                messagebox.showerror(
+                    "Error de DGAPI",
+                    str(error),
+                    parent=ventana
+                )
+
+            except Exception as error:
+
+                messagebox.showerror(
+                    "Error",
+                    f"Ocurrió un error durante la consulta.\n\n{error}",
+                    parent=ventana
+                )
+
+            finally:
+
+                boton_dgapi.config(
+                    state="normal",
+                    text="Consultar DGAPI"
+                )
+
+        boton_dgapi = tk.Button(
+            fila_rnc,
+            text="Consultar DGAPI",
+            command=consultar_dgapi,
+            bg="#111827",
+            fg="white",
+            activebackground="#374151",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2"
+        )
+
+        boton_dgapi.pack(
+            side="left",
+            padx=(8, 0),
+            ipady=4
+        )
+
+        # ==========================================
+        # CARGAR DATOS SI ES EDICIÓN
+        # ==========================================
 
         if cliente:
 
@@ -437,6 +773,10 @@ class Clientes:
                 0,
                 cliente[5] or ""
             )
+
+        # ==========================================
+        # GUARDAR
+        # ==========================================
 
         def guardar():
 
@@ -501,6 +841,10 @@ class Clientes:
                     parent=ventana
                 )
 
+        # ==========================================
+        # BOTÓN GUARDAR
+        # ==========================================
+
         boton_guardar = tk.Button(
             ventana,
             text="Guardar",
@@ -513,7 +857,7 @@ class Clientes:
         )
 
         boton_guardar.pack(
-            pady=25,
+            pady=20,
             ipady=5
         )
 

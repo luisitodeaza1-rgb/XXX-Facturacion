@@ -96,6 +96,8 @@ def generar_numero_factura():
 def crear_factura(
     cliente_id,
     items,
+    cliente_nombre=None,
+    cliente_rnc=None,
     itbis_porcentaje=0.18
 ):
 
@@ -104,6 +106,51 @@ def crear_factura(
         raise ValueError(
             "La factura debe tener al menos un producto."
         )
+
+    # ==========================================
+    # VALIDAR CLIENTE
+    # ==========================================
+
+    if cliente_id is not None:
+
+        conexion_cliente = obtener_conexion()
+        cursor_cliente = conexion_cliente.cursor()
+
+        cursor_cliente.execute("""
+            SELECT nombre, rnc
+            FROM clientes
+            WHERE id = ?
+        """, (cliente_id,))
+
+        cliente = cursor_cliente.fetchone()
+
+        conexion_cliente.close()
+
+        if not cliente:
+
+            raise ValueError(
+                "El cliente seleccionado no existe."
+            )
+
+        if not cliente_nombre:
+            cliente_nombre = cliente[0]
+
+        if not cliente_rnc:
+            cliente_rnc = cliente[1]
+
+    else:
+
+        if not cliente_nombre:
+
+            raise ValueError(
+                "Debe indicar el nombre del particular."
+            )
+
+        if not cliente_rnc:
+
+            raise ValueError(
+                "Debe indicar el RNC del particular."
+            )
 
     conexion = obtener_conexion()
     cursor = conexion.cursor()
@@ -191,15 +238,19 @@ def crear_factura(
             (
                 numero,
                 cliente_id,
+                cliente_nombre,
+                cliente_rnc,
                 fecha,
                 subtotal,
                 itbis,
                 total
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             numero_factura,
             cliente_id,
+            cliente_nombre,
+            cliente_rnc,
             fecha,
             subtotal,
             itbis,
@@ -252,6 +303,9 @@ def crear_factura(
             "id": factura_id,
             "numero": numero_factura,
             "fecha": fecha,
+            "cliente_id": cliente_id,
+            "cliente_nombre": cliente_nombre,
+            "cliente_rnc": cliente_rnc,
             "subtotal": subtotal,
             "itbis": itbis,
             "total": total
