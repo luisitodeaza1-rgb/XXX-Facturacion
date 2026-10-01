@@ -2,6 +2,7 @@ import tkinter as tk
 
 from Cliente import Clientes
 from Product import Productos
+from facturas import Facturacion
 
 
 class Dashboard:
@@ -40,9 +41,7 @@ class Dashboard:
             bg="#1f2937"
         )
 
-        titulo.pack(
-            pady=30
-        )
+        titulo.pack(pady=30)
 
         botones = [
             ("Inicio", self.inicio),
@@ -90,10 +89,6 @@ class Dashboard:
         )
 
         self.mostrar_inicio()
-
-    # ==========================================
-    # INICIO
-    # ==========================================
 
     def mostrar_inicio(self):
 
@@ -165,10 +160,6 @@ class Dashboard:
             3
         )
 
-    # ==========================================
-    # TARJETAS
-    # ==========================================
-
     def crear_tarjeta(
         self,
         padre,
@@ -213,27 +204,14 @@ class Dashboard:
             fg="#111827"
         ).pack()
 
-    # ==========================================
-    # LIMPIAR CONTENIDO
-    # ==========================================
-
     def limpiar_contenido(self):
 
         for widget in self.contenido.winfo_children():
-
             widget.destroy()
-
-    # ==========================================
-    # INICIO
-    # ==========================================
 
     def inicio(self):
 
         self.mostrar_inicio()
-
-    # ==========================================
-    # CLIENTES
-    # ==========================================
 
     def clientes(self):
 
@@ -243,10 +221,6 @@ class Dashboard:
             self.contenido
         )
 
-    # ==========================================
-    # PRODUCTOS
-    # ==========================================
-
     def productos(self):
 
         self.limpiar_contenido()
@@ -255,19 +229,13 @@ class Dashboard:
             self.contenido
         )
 
-    # ==========================================
-    # FACTURACIÓN
-    # ==========================================
-
     def facturacion(self):
 
-        self.mostrar_modulo(
-            "Facturación"
-        )
+        self.limpiar_contenido()
 
-    # ==========================================
-    # HISTORIAL
-    # ==========================================
+        Facturacion(
+            self.contenido
+        )
 
     def historial(self):
 
@@ -275,29 +243,17 @@ class Dashboard:
             "Historial de Facturas"
         )
 
-    # ==========================================
-    # REPORTES
-    # ==========================================
-
     def reportes(self):
 
         self.mostrar_modulo(
             "Reportes"
         )
 
-    # ==========================================
-    # CONFIGURACIÓN
-    # ==========================================
-
     def configuracion(self):
 
         self.mostrar_modulo(
             "Configuración"
         )
-
-    # ==========================================
-    # MÓDULOS TEMPORALES
-    # ==========================================
 
     def mostrar_modulo(self, titulo):
 
