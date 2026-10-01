@@ -16,10 +16,6 @@ class Configuracion:
         self.crear_interfaz()
         self.cargar_configuracion()
 
-    # ==========================================
-    # INTERFAZ
-    # ==========================================
-
     def crear_interfaz(self):
 
         titulo = tk.Label(
@@ -49,10 +45,6 @@ class Configuracion:
             padx=30
         )
 
-        # ==========================================
-        # CONTENEDOR
-        # ==========================================
-
         contenedor = tk.Frame(
             self.padre,
             bg="white",
@@ -65,10 +57,6 @@ class Configuracion:
             padx=30,
             pady=25
         )
-
-        # ==========================================
-        # TÍTULO
-        # ==========================================
 
         tk.Label(
             contenedor,
@@ -96,10 +84,6 @@ class Configuracion:
             padx=25,
             pady=(0, 20)
         )
-
-        # ==========================================
-        # FORMULARIO
-        # ==========================================
 
         formulario = tk.Frame(
             contenedor,
@@ -146,10 +130,6 @@ class Configuracion:
 
             self.entradas[clave] = entrada
 
-        # ==========================================
-        # BOTÓN
-        # ==========================================
-
         boton_guardar = tk.Button(
             contenedor,
             text="Guardar configuración",
@@ -169,10 +149,6 @@ class Configuracion:
             padx=25,
             pady=(0, 25)
         )
-
-    # ==========================================
-    # CARGAR CONFIGURACIÓN
-    # ==========================================
 
     def cargar_configuracion(self):
 
@@ -206,10 +182,6 @@ class Configuracion:
             0,
             configuracion[5] or ""
         )
-
-    # ==========================================
-    # GUARDAR
-    # ==========================================
 
     def guardar(self):
 

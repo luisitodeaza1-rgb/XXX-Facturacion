@@ -2,6 +2,7 @@ from database import obtener_conexion
 
 
 def obtener_clientes():
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -19,6 +20,7 @@ def obtener_clientes():
 
 
 def obtener_cliente(cliente_id):
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -35,7 +37,39 @@ def obtener_cliente(cliente_id):
     return cliente
 
 
-def crear_cliente(nombre, rnc, telefono, email, direccion):
+def obtener_cliente_por_rnc(rnc):
+
+    rnc = (
+        rnc
+        .replace("-", "")
+        .replace(" ", "")
+        .strip()
+    )
+
+    conexion = obtener_conexion()
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        SELECT id, nombre, rnc, telefono, email, direccion
+        FROM clientes
+        WHERE REPLACE(REPLACE(rnc, '-', ''), ' ', '') = ?
+    """, (rnc,))
+
+    cliente = cursor.fetchone()
+
+    conexion.close()
+
+    return cliente
+
+
+def crear_cliente(
+    nombre,
+    rnc,
+    telefono="",
+    email="",
+    direccion=""
+):
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -51,8 +85,12 @@ def crear_cliente(nombre, rnc, telefono, email, direccion):
         direccion
     ))
 
+    cliente_id = cursor.lastrowid
+
     conexion.commit()
     conexion.close()
+
+    return cliente_id
 
 
 def actualizar_cliente(
@@ -63,6 +101,7 @@ def actualizar_cliente(
     email,
     direccion
 ):
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -89,6 +128,7 @@ def actualizar_cliente(
 
 
 def eliminar_cliente(cliente_id):
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 
@@ -102,6 +142,7 @@ def eliminar_cliente(cliente_id):
 
 
 def buscar_clientes(texto):
+
     conexion = obtener_conexion()
     cursor = conexion.cursor()
 

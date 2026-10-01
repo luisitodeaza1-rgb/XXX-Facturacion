@@ -8,6 +8,13 @@ from Services.Facturas_services import (
     crear_factura
 )
 
+from Services.Client_services import (
+    obtener_cliente_por_rnc,
+    crear_cliente
+)
+
+from Services.RNC_services import consultar_rnc
+
 
 class Facturacion:
 
@@ -17,6 +24,7 @@ class Facturacion:
 
         self.productos = []
         self.items = []
+        self.clientes = []
 
         self.crear_interfaz()
         self.cargar_clientes()
@@ -74,13 +82,66 @@ class Facturacion:
 
         tk.Label(
             cliente_frame,
-            text="Cliente",
-            font=("Arial", 11, "bold"),
+            text="RNC del cliente",
+            font=("Arial", 10, "bold"),
             bg="white"
-        ).pack(
-            side="left",
-            padx=(15, 10),
-            pady=15
+        ).grid(
+            row=0,
+            column=0,
+            padx=(15, 5),
+            pady=(15, 5),
+            sticky="w"
+        )
+
+        self.rnc_var = tk.StringVar()
+
+        self.rnc_entry = tk.Entry(
+            cliente_frame,
+            textvariable=self.rnc_var,
+            font=("Arial", 10),
+            width=25
+        )
+
+        self.rnc_entry.grid(
+            row=1,
+            column=0,
+            padx=(15, 5),
+            pady=(0, 15),
+            ipady=6
+        )
+
+        boton_consultar = tk.Button(
+            cliente_frame,
+            text="CONSULTAR DGII",
+            command=self.consultar_dgii,
+            bg="#2563eb",
+            fg="white",
+            activebackground="#1d4ed8",
+            activeforeground="white",
+            relief="flat",
+            cursor="hand2",
+            padx=15,
+            pady=8
+        )
+
+        boton_consultar.grid(
+            row=1,
+            column=1,
+            padx=5,
+            pady=(0, 15)
+        )
+
+        tk.Label(
+            cliente_frame,
+            text="Cliente registrado",
+            font=("Arial", 10, "bold"),
+            bg="white"
+        ).grid(
+            row=0,
+            column=2,
+            padx=(20, 5),
+            pady=(15, 5),
+            sticky="w"
         )
 
         self.cliente_var = tk.StringVar()
@@ -92,10 +153,37 @@ class Facturacion:
             width=45
         )
 
-        self.cliente_combo.pack(
-            side="left",
-            padx=10,
-            pady=15
+        self.cliente_combo.grid(
+            row=1,
+            column=2,
+            padx=(20, 15),
+            pady=(0, 15)
+        )
+
+        # ==========================================
+        # DATOS DEL CLIENTE
+        # ==========================================
+
+        self.cliente_info = tk.Label(
+            cliente_frame,
+            text="Cliente: Ninguno seleccionado",
+            font=("Arial", 10),
+            bg="white",
+            fg="#374151"
+        )
+
+        self.cliente_info.grid(
+            row=2,
+            column=0,
+            columnspan=3,
+            padx=15,
+            pady=(0, 15),
+            sticky="w"
+        )
+
+        self.cliente_combo.bind(
+            "<<ComboboxSelected>>",
+            self.cliente_seleccionado
         )
 
         # ==========================================
@@ -370,6 +458,260 @@ class Facturacion:
         )
 
     # ==========================================
+    # CONSULTAR DGII
+    # ==========================================
+
+    def consultar_dgii(self):
+
+        rnc = (
+            self.rnc_var
+            .get()
+            .replace("-", "")
+            .replace(" ", "")
+            .strip()
+        )
+
+        if not rnc:
+
+            messagebox.showwarning(
+                "RNC requerido",
+                "Introduzca el RNC del cliente."
+            )
+
+            return
+
+        try:
+
+            self.padre.config(
+                cursor="watch"
+            )
+
+            self.padre.update()
+
+            # ==========================================
+            # PRIMERO BUSCAMOS EN NUESTRA BASE DE DATOS
+            # ==========================================
+
+            cliente = obtener_cliente_por_rnc(rnc)
+
+            if cliente:
+
+                self.seleccionar_cliente(
+                    cliente
+                )
+
+                messagebox.showinfo(
+                    "Cliente encontrado",
+                    f"El cliente '{cliente[1]}' ya está registrado."
+                )
+
+                return
+
+            # ==========================================
+            # SI NO EXISTE, CONSULTAMOS DGII
+            # ==========================================
+
+            resultado = consultar_rnc(rnc)
+
+            if not resultado:
+
+                messagebox.showwarning(
+                    "RNC no encontrado",
+                    "No se encontraron datos para el RNC indicado."
+                )
+
+                return
+
+            nombre = (
+                resultado.get("nombre_empresa")
+                or resultado.get("nombre_comercial")
+            )
+
+            if not nombre:
+
+                messagebox.showwarning(
+                    "Datos incompletos",
+                    "La DGII no devolvió el nombre del contribuyente."
+                )
+
+                return
+
+            # ==========================================
+            # CREAR CLIENTE AUTOMÁTICAMENTE
+            # ==========================================
+
+            cliente_id = crear_cliente(
+                nombre,
+                rnc,
+                "",
+                "",
+                ""
+            )
+
+            cliente = (
+                cliente_id,
+                nombre,
+                rnc,
+                "",
+                "",
+                ""
+            )
+
+            self.clientes.insert(
+                0,
+                cliente
+            )
+
+            self.actualizar_lista_clientes()
+
+            self.seleccionar_cliente(
+                cliente
+            )
+
+            # ==========================================
+            # MOSTRAR INFORMACIÓN OBTENIDA
+            # ==========================================
+
+            actividad = resultado.get(
+                "actividad_economica",
+                ""
+            )
+
+            estado = resultado.get(
+                "estado",
+                ""
+            )
+
+            regimen = resultado.get(
+                "regimen",
+                ""
+            )
+
+            mensaje = (
+                f"Cliente: {nombre}\n"
+                f"RNC: {rnc}"
+            )
+
+            if actividad:
+                mensaje += (
+                    f"\nActividad económica: {actividad}"
+                )
+
+            if estado:
+                mensaje += (
+                    f"\nEstado: {estado}"
+                )
+
+            if regimen:
+                mensaje += (
+                    f"\nRégimen: {regimen}"
+                )
+
+            messagebox.showinfo(
+                "Cliente agregado",
+                (
+                    "El cliente fue consultado en la DGII "
+                    "y agregado automáticamente.\n\n"
+                    + mensaje
+                )
+            )
+
+        except ValueError as error:
+
+            messagebox.showwarning(
+                "RNC inválido",
+                str(error)
+            )
+
+        except Exception as error:
+
+            messagebox.showerror(
+                "Error",
+                f"No fue posible consultar el RNC.\n\n{error}"
+            )
+
+        finally:
+
+            self.padre.config(
+                cursor=""
+            )
+
+    # ==========================================
+    # SELECCIONAR CLIENTE
+    # ==========================================
+
+    def seleccionar_cliente(self, cliente):
+
+        for indice, elemento in enumerate(
+            self.clientes
+        ):
+
+            if elemento[0] == cliente[0]:
+
+                self.cliente_combo.current(
+                    indice
+                )
+
+                self.cliente_var.set(
+                    f"{cliente[0]} - "
+                    f"{cliente[1]} - "
+                    f"{cliente[2] or 'Sin RNC'}"
+                )
+
+                self.cliente_info.config(
+                    text=(
+                        f"Cliente seleccionado: "
+                        f"{cliente[1]} | "
+                        f"RNC: {cliente[2] or 'Sin RNC'}"
+                    )
+                )
+
+                break
+
+    def cliente_seleccionado(self, event=None):
+
+        indice = self.cliente_combo.current()
+
+        if indice == -1:
+            return
+
+        cliente = self.clientes[indice]
+
+        self.cliente_info.config(
+            text=(
+                f"Cliente seleccionado: "
+                f"{cliente[1]} | "
+                f"RNC: {cliente[2] or 'Sin RNC'}"
+            )
+        )
+
+        if cliente[2]:
+
+            self.rnc_var.set(
+                cliente[2]
+            )
+
+    # ==========================================
+    # ACTUALIZAR LISTA DE CLIENTES
+    # ==========================================
+
+    def actualizar_lista_clientes(self):
+
+        opciones = []
+
+        for cliente in self.clientes:
+
+            rnc = cliente[2] or "Sin RNC"
+
+            opciones.append(
+                f"{cliente[0]} - "
+                f"{cliente[1]} - "
+                f"{rnc}"
+            )
+
+        self.cliente_combo["values"] = opciones
+
+    # ==========================================
     # CLIENTES
     # ==========================================
 
@@ -379,21 +721,13 @@ class Facturacion:
 
         self.clientes = clientes
 
-        opciones = []
+        self.actualizar_lista_clientes()
 
-        for cliente in clientes:
-
-            rnc = cliente[2] or "Sin RNC"
-
-            opciones.append(
-                f"{cliente[0]} - {cliente[1]} - {rnc}"
-            )
-
-        self.cliente_combo["values"] = opciones
-
-        if opciones:
+        if clientes:
 
             self.cliente_combo.current(0)
+
+            self.cliente_seleccionado()
 
     # ==========================================
     # PRODUCTOS
@@ -410,8 +744,11 @@ class Facturacion:
             codigo = producto[1] or "Sin código"
 
             opciones.append(
-                f"{producto[0]} - {codigo} - {producto[2]} - "
-                f"RD$ {producto[3]:,.2f} - Stock: {producto[4]}"
+                f"{producto[0]} - "
+                f"{codigo} - "
+                f"{producto[2]} - "
+                f"RD$ {producto[3]:,.2f} - "
+                f"Stock: {producto[4]}"
             )
 
         self.producto_combo["values"] = opciones
@@ -472,10 +809,6 @@ class Facturacion:
 
             return
 
-        # ==========================================
-        # VERIFICAR SI YA ESTÁ EN LA FACTURA
-        # ==========================================
-
         for item in self.items:
 
             if item["producto_id"] == producto_id:
@@ -502,10 +835,6 @@ class Facturacion:
                 self.actualizar_tabla()
 
                 return
-
-        # ==========================================
-        # NUEVO ITEM
-        # ==========================================
 
         item = {
             "producto_id": producto_id,
