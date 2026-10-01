@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from Cliente import Clientes
+from Product import Productos
 
 
 class Dashboard:
@@ -16,15 +17,7 @@ class Dashboard:
 
         self.crear_interfaz()
 
-    # ==========================================
-    # INTERFAZ PRINCIPAL
-    # ==========================================
-
     def crear_interfaz(self):
-
-        # ------------------------------
-        # BARRA LATERAL
-        # ------------------------------
 
         self.sidebar = tk.Frame(
             self.root,
@@ -39,10 +32,6 @@ class Dashboard:
 
         self.sidebar.pack_propagate(False)
 
-        # ------------------------------
-        # NOMBRE DEL SISTEMA
-        # ------------------------------
-
         titulo = tk.Label(
             self.sidebar,
             text="XXX\nFACTURADOR",
@@ -51,11 +40,9 @@ class Dashboard:
             bg="#1f2937"
         )
 
-        titulo.pack(pady=30)
-
-        # ------------------------------
-        # BOTONES DEL MENÚ
-        # ------------------------------
+        titulo.pack(
+            pady=30
+        )
 
         botones = [
             ("Inicio", self.inicio),
@@ -90,10 +77,6 @@ class Dashboard:
                 padx=10,
                 pady=3
             )
-
-        # ------------------------------
-        # ÁREA PRINCIPAL
-        # ------------------------------
 
         self.contenido = tk.Frame(
             self.root,
@@ -143,10 +126,6 @@ class Dashboard:
             padx=30
         )
 
-        # ------------------------------
-        # TARJETAS
-        # ------------------------------
-
         tarjetas = tk.Frame(
             self.contenido,
             bg="#f3f4f6"
@@ -187,7 +166,7 @@ class Dashboard:
         )
 
     # ==========================================
-    # CREAR TARJETA
+    # TARJETAS
     # ==========================================
 
     def crear_tarjeta(
@@ -241,44 +220,83 @@ class Dashboard:
     def limpiar_contenido(self):
 
         for widget in self.contenido.winfo_children():
+
             widget.destroy()
 
     # ==========================================
-    # MÓDULOS
+    # INICIO
     # ==========================================
 
     def inicio(self):
 
         self.mostrar_inicio()
 
+    # ==========================================
+    # CLIENTES
+    # ==========================================
+
     def clientes(self):
 
         self.limpiar_contenido()
 
-        Clientes(self.contenido)
+        Clientes(
+            self.contenido
+        )
+
+    # ==========================================
+    # PRODUCTOS
+    # ==========================================
 
     def productos(self):
 
-        self.mostrar_modulo("Productos")
+        self.limpiar_contenido()
+
+        Productos(
+            self.contenido
+        )
+
+    # ==========================================
+    # FACTURACIÓN
+    # ==========================================
 
     def facturacion(self):
 
-        self.mostrar_modulo("Facturación")
+        self.mostrar_modulo(
+            "Facturación"
+        )
+
+    # ==========================================
+    # HISTORIAL
+    # ==========================================
 
     def historial(self):
 
-        self.mostrar_modulo("Historial de Facturas")
+        self.mostrar_modulo(
+            "Historial de Facturas"
+        )
+
+    # ==========================================
+    # REPORTES
+    # ==========================================
 
     def reportes(self):
 
-        self.mostrar_modulo("Reportes")
+        self.mostrar_modulo(
+            "Reportes"
+        )
+
+    # ==========================================
+    # CONFIGURACIÓN
+    # ==========================================
 
     def configuracion(self):
 
-        self.mostrar_modulo("Configuración")
+        self.mostrar_modulo(
+            "Configuración"
+        )
 
     # ==========================================
-    # MOSTRAR MÓDULO
+    # MÓDULOS TEMPORALES
     # ==========================================
 
     def mostrar_modulo(self, titulo):
